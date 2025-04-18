@@ -60,6 +60,7 @@ def train_model():
         logging_steps=10,
         save_strategy="steps",
         save_steps=1000,
+        save_safetensors=False,
     )
 
     trainer = Trainer(

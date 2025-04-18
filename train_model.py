@@ -11,7 +11,7 @@ import torch
 def get_dataset(tokenizer):
     def tokenize_and_chunk(example):
         tokens = tokenizer.encode(example["text"]).ids
-        chunk = tokens[:min(513, len(tokens))]
+        chunk = tokens[: min(513, len(tokens))]
         if len(chunk) < 513:
             chunk += [tokenizer.token_to_id("[PAD]")] * (513 - len(chunk))
         example["input_ids"] = chunk[:-1]
@@ -60,7 +60,6 @@ def train_model():
         logging_steps=10,
         save_strategy="steps",
         save_steps=1000,
-        safe_serialization=False
     )
 
     trainer = Trainer(
@@ -70,7 +69,9 @@ def train_model():
     )
 
     trainer.train()
-    trainer.save_model("/Users/tianhaoz/Downloads/beru/final_model")
+    trainer.save_model(
+        "/Users/tianhaoz/Downloads/beru/final_model", safe_serialization=False
+    )
 
 
 def main():

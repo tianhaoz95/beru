@@ -175,6 +175,7 @@ cython_debug/
 
 # Artifacts
 bpe-small-vocab-for-beru.json
+checkpoints/
 
 # System files
 .DS_Store

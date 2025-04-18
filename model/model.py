@@ -102,7 +102,7 @@ class Attention(nn.Module):
             repeat_kv(xk, self.n_rep).transpose(1, 2),
             repeat_kv(xv, self.n_rep).transpose(1, 2),
         )
-        scores = (xq @ xk.transpose(-2, -1)) / torch.tensor(self.head_dim ** 0.5)
+        scores = (xq @ xk.transpose(-2, -1)) / torch.tensor(self.head_dim**0.5)
         scores += self.mask[:, :, :seq_len, :seq_len]
         scores = F.softmax(scores.float(), dim=-1).type_as(xq)
         scores = self.attn_dropout(scores)
@@ -206,8 +206,7 @@ class BeruModel(PreTrainedModel):
             else logits_to_keep
         )
         logits = self.output(self.norm(h)[:, slice_indices, :])
-        
-        # Calculate loss if labels are provided
+
         loss = None
         if labels is not None:
             loss_fct = nn.CrossEntropyLoss()
@@ -218,3 +217,47 @@ class BeruModel(PreTrainedModel):
         self.OUT.__setitem__("loss", loss)
         self.OUT.__setitem__("past_key_values", past_kvs)
         return self.OUT
+
+    @torch.inference_mode()
+    def generate(self, input_ids, eos_token_id=2, max_new_tokens=1024, temperature=0.75, top_p=0.90,
+                 stream=False, rp=1., use_cache=True, pad_token_id=0, num_return_sequences=1, **args):
+        start, first_seq, past_kvs = input_ids.shape[1], True, None
+        while input_ids.shape[1] < max_new_tokens - 1:
+            if first_seq or not use_cache:
+                out, first_seq = (
+                    self(
+                        input_ids, past_key_values=past_kvs, use_cache=use_cache, **args
+                    ),
+                    False,
+                )
+            else:
+                out = self(
+                    input_ids[:, -1:],
+                    past_key_values=past_kvs,
+                    use_cache=use_cache,
+                    start_pos=input_ids.shape[1] - 1,
+                    **args
+                )
+            logits, past_kvs = out.logits[:, -1, :], out.past_key_values
+            logits[:, list(set(input_ids.tolist()[0]))] /= rp
+            logits /= temperature + 1e-9
+            if top_p is not None and top_p < 1.0:
+                sorted_logits, sorted_indices = torch.sort(
+                    logits, descending=True, dim=-1
+                )
+                sorted_probs = F.softmax(sorted_logits, dim=-1)
+                cumulative_probs = torch.cumsum(sorted_probs, dim=-1)
+                sorted_indices_to_remove = cumulative_probs > top_p
+                sorted_indices_to_remove[:, 1:] = sorted_indices_to_remove[
+                    :, :-1
+                ].clone()
+                sorted_indices_to_remove[:, 0] = False
+                indices_to_remove = sorted_indices_to_remove.scatter(
+                    1, sorted_indices, sorted_indices_to_remove
+                )
+                logits[indices_to_remove] = -float("Inf")
+            input_ids_next = torch.multinomial(F.softmax(logits, dim=-1), num_samples=1)
+            input_ids = torch.cat((input_ids, input_ids_next), dim=1)
+            yield input_ids[:, start:]
+            if input_ids_next.item() == eos_token_id:
+                break

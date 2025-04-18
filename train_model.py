@@ -59,7 +59,7 @@ def train_model():
         warmup_ratio=0.1,
         logging_steps=10,
         save_strategy="steps",
-        save_steps=1000,
+        save_steps=100,
         save_safetensors=False,
     )
 

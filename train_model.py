@@ -6,6 +6,7 @@ from torch import optim, nn
 import math
 from transformers import Trainer, TrainingArguments
 import torch
+import argparse
 
 
 def get_dataset(tokenizer):
@@ -30,7 +31,7 @@ def get_dataset(tokenizer):
     return mapped_ds
 
 
-def train_model():
+def train_model(max_steps, save_steps):
     config = BeruConfig(n_layers=2)
     model = BeruModel(config)
     print(model)
@@ -53,13 +54,13 @@ def train_model():
         output_dir="/Users/tianhaoz/Downloads/beru/checkpoints",
         per_device_train_batch_size=8,
         gradient_accumulation_steps=4,
-        max_steps=10000,
+        max_steps=max_steps,
         learning_rate=5e-4,
         lr_scheduler_type="cosine",
         warmup_ratio=0.1,
         logging_steps=10,
         save_strategy="steps",
-        save_steps=100,
+        save_steps=save_steps,
         save_safetensors=False,
     )
 
@@ -76,7 +77,14 @@ def train_model():
 
 
 def main():
-    train_model()
+    parser = argparse.ArgumentParser(description='Train the Beru model')
+    parser.add_argument('--max_steps', type=int, default=10000,
+                      help='Maximum number of training steps')
+    parser.add_argument('--save_steps', type=int, default=100,
+                      help='Save checkpoint every N steps')
+    args = parser.parse_args()
+    
+    train_model(args.max_steps, args.save_steps)
 
 
 if __name__ == "__main__":

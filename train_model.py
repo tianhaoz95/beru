@@ -53,13 +53,14 @@ def train_model():
         output_dir="/Users/tianhaoz/Downloads/beru/checkpoints",
         per_device_train_batch_size=8,
         gradient_accumulation_steps=4,
-        max_steps=10000,  # Add this line
+        max_steps=10000,
         learning_rate=5e-4,
         lr_scheduler_type="cosine",
         warmup_ratio=0.1,
         logging_steps=10,
         save_strategy="steps",
         save_steps=1000,
+        safe_serialization=False
     )
 
     trainer = Trainer(

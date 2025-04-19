@@ -77,6 +77,7 @@ def train_model(max_steps, save_steps, checkpoint_path=None):
                 model.eval()
                 with torch.no_grad():
                     encoded = tokenizer.encode(self.prompt)
+                    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
                     input_ids = torch.tensor([encoded.ids]).to(device)
                     generated_sequences = []
                     for output_ids in model.generate(

@@ -7,6 +7,7 @@ import math
 from transformers import Trainer, TrainingArguments
 import torch
 import argparse
+import utils
 
 from transformers import TrainerCallback, TrainingArguments, Trainer
 
@@ -77,7 +78,7 @@ def train_model(max_steps, save_steps, checkpoint_path=None):
                 model.eval()
                 with torch.no_grad():
                     encoded = tokenizer.encode(self.prompt)
-                    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+                    device = torch.device(utils.get_device())
                     input_ids = torch.tensor([encoded.ids]).to(device)
                     generated_sequences = []
                     for output_ids in model.generate(
@@ -85,7 +86,7 @@ def train_model(max_steps, save_steps, checkpoint_path=None):
                         max_new_tokens=20,
                         temperature=0.7,
                         top_p=0.9,
-                        use_cache=True
+                        use_cache=True,
                     ):
                         generated_sequences += output_ids.tolist()[0]
                     generated_text = tokenizer.decode(generated_sequences)

@@ -36,10 +36,18 @@ def train_tokenizer():
     trainer = BpeTrainer(
         vocab_size=6400,
         min_frequency=2,
-        special_tokens=["[PAD]", "[UNK]", "[CLS]", "[SEP]", "[MASK]"],
+        special_tokens=[
+            "<|begin_of_text|>",
+            "<|end_of_text|>",
+            "<|start_header_id|>",
+            "<|end_header_id|>",
+            "<|reserved_special_token_4|>",
+            "<|eot_id|>",
+        ]
+        + [f"<|reserved_special_token_{i}|>" for i in range(10)],
     )
-    batches_to_train = 50
-    batch_size = 100
+    batches_to_train = 10000
+    batch_size = 20
     tokenizer.train_from_iterator(
         batch_iterator(ds, batch_size=batch_size, total_batches=batches_to_train),
         trainer=trainer,

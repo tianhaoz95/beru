@@ -23,7 +23,7 @@ def generate_text(prompt: str, max_tokens: int = 100):
         top_p=0.9,
         use_cache=True
     ):
-        generated_sequences = output_ids.tolist()[0]
+        generated_sequences += output_ids.tolist()[0]
     generated_text = tokenizer.decode(generated_sequences)
     return generated_text
 

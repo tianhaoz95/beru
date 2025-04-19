@@ -67,7 +67,7 @@ def train_model(max_steps, save_steps, checkpoint_path=None):
     )
 
     class GenerationCallback(TrainerCallback):
-        def __init__(self, tokenizer, generate_every=1000):
+        def __init__(self, tokenizer, generate_every=100):
             self.tokenizer = tokenizer
             self.generate_every = generate_every
             self.prompt = "The quick brown fox"
@@ -76,12 +76,18 @@ def train_model(max_steps, save_steps, checkpoint_path=None):
             if state.global_step % self.generate_every == 0:
                 model.eval()
                 with torch.no_grad():
-                    input_ids = self.tokenizer.encode(self.prompt).ids
-                    input_tensor = torch.tensor([input_ids]).to(model.device)
-                    outputs = model.generate(
-                        input_tensor, max_length=50, num_return_sequences=1
-                    )
-                    generated_text = self.tokenizer.decode(outputs[0].tolist())
+                    encoded = tokenizer.encode(self.prompt)
+                    input_ids = torch.tensor([encoded.ids]).to(device)
+                    generated_sequences = []
+                    for output_ids in model.generate(
+                        input_ids,
+                        max_new_tokens=max_tokens,
+                        temperature=0.7,
+                        top_p=0.9,
+                        use_cache=True
+                    ):
+                        generated_sequences += output_ids.tolist()[0]
+                    generated_text = tokenizer.decode(generated_sequences)
                     print(f"\nStep {state.global_step} generation:")
                     print(f"Prompt: {self.prompt}")
                     print(f"Generated: {generated_text}\n")

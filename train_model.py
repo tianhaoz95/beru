@@ -31,7 +31,7 @@ def get_dataset(tokenizer):
     return mapped_ds
 
 
-def train_model(max_steps, save_steps):
+def train_model(max_steps, save_steps, checkpoint_path=None):
     config = BeruConfig(n_layers=2)
     model = BeruModel(config)
     print(model)
@@ -51,7 +51,7 @@ def train_model(max_steps, save_steps):
     ds = get_dataset(tokenizer)
 
     training_args = TrainingArguments(
-        output_dir="/Users/tianhaoz/Downloads/beru/checkpoints",
+        output_dir="./checkpoints",
         per_device_train_batch_size=8,
         gradient_accumulation_steps=4,
         max_steps=max_steps,
@@ -70,7 +70,7 @@ def train_model(max_steps, save_steps):
         train_dataset=ds,
     )
 
-    trainer.train()
+    trainer.train(resume_from_checkpoint=checkpoint_path)
     trainer.save_model(
         "/Users/tianhaoz/Downloads/beru/final_model", safe_serialization=False
     )
@@ -82,9 +82,11 @@ def main():
                       help='Maximum number of training steps')
     parser.add_argument('--save_steps', type=int, default=100,
                       help='Save checkpoint every N steps')
+    parser.add_argument('--checkpoint_path', type=str, default=None,
+                      help='Path to checkpoint to resume training from')
     args = parser.parse_args()
     
-    train_model(args.max_steps, args.save_steps)
+    train_model(args.max_steps, args.save_steps, args.checkpoint_path)
 
 
 if __name__ == "__main__":

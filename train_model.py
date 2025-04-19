@@ -8,6 +8,8 @@ from transformers import Trainer, TrainingArguments
 import torch
 import argparse
 
+from transformers import TrainerCallback, TrainingArguments, Trainer
+
 
 def get_dataset(tokenizer):
     def tokenize_and_chunk(example):
@@ -64,10 +66,32 @@ def train_model(max_steps, save_steps, checkpoint_path=None):
         save_safetensors=False,
     )
 
+    class GenerationCallback(TrainerCallback):
+        def __init__(self, tokenizer, generate_every=1000):
+            self.tokenizer = tokenizer
+            self.generate_every = generate_every
+            self.prompt = "The quick brown fox"
+
+        def on_step_end(self, args, state, control, model, **kwargs):
+            if state.global_step % self.generate_every == 0:
+                model.eval()
+                with torch.no_grad():
+                    input_ids = self.tokenizer.encode(self.prompt).ids
+                    input_tensor = torch.tensor([input_ids]).to(model.device)
+                    outputs = model.generate(
+                        input_tensor, max_length=50, num_return_sequences=1
+                    )
+                    generated_text = self.tokenizer.decode(outputs[0].tolist())
+                    print(f"\nStep {state.global_step} generation:")
+                    print(f"Prompt: {self.prompt}")
+                    print(f"Generated: {generated_text}\n")
+                model.train()
+
     trainer = Trainer(
         model=model,
         args=training_args,
         train_dataset=ds,
+        callbacks=[GenerationCallback(tokenizer)],
     )
 
     trainer.train(resume_from_checkpoint=checkpoint_path)
@@ -77,15 +101,21 @@ def train_model(max_steps, save_steps, checkpoint_path=None):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Train the Beru model')
-    parser.add_argument('--max_steps', type=int, default=10000,
-                      help='Maximum number of training steps')
-    parser.add_argument('--save_steps', type=int, default=100,
-                      help='Save checkpoint every N steps')
-    parser.add_argument('--checkpoint_path', type=str, default=None,
-                      help='Path to checkpoint to resume training from')
+    parser = argparse.ArgumentParser(description="Train the Beru model")
+    parser.add_argument(
+        "--max_steps", type=int, default=10000, help="Maximum number of training steps"
+    )
+    parser.add_argument(
+        "--save_steps", type=int, default=100, help="Save checkpoint every N steps"
+    )
+    parser.add_argument(
+        "--checkpoint_path",
+        type=str,
+        default=None,
+        help="Path to checkpoint to resume training from",
+    )
     args = parser.parse_args()
-    
+
     train_model(args.max_steps, args.save_steps, args.checkpoint_path)
 
 

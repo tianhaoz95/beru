@@ -82,7 +82,7 @@ def train_model(max_steps, save_steps, checkpoint_path=None):
                     generated_sequences = []
                     for output_ids in model.generate(
                         input_ids,
-                        max_new_tokens=max_tokens,
+                        max_new_tokens=20,
                         temperature=0.7,
                         top_p=0.9,
                         use_cache=True

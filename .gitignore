@@ -174,8 +174,8 @@ cython_debug/
 .pypirc
 
 # Artifacts
-bpe-small-vocab-for-beru.json
 checkpoints/
+my_bpe_tokenizer_files/
 
 # System files
 .DS_Store

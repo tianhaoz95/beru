@@ -26,7 +26,7 @@ def batch_iterator(dataset, batch_size=100, total_batches=500):
         yield batch
 
 
-def train_tokenizer():
+def train_tokenizer(batches_to_train=10000, batch_size=20):
     ds = load_dataset(
         "HuggingFaceFW/fineweb", "CC-MAIN-2013-20", split="train", streaming=True
     )
@@ -46,8 +46,6 @@ def train_tokenizer():
         ]
         + [f"<|reserved_special_token_{i}|>" for i in range(10)],
     )
-    batches_to_train = 10000
-    batch_size = 20
     tokenizer.train_from_iterator(
         batch_iterator(ds, batch_size=batch_size, total_batches=batches_to_train),
         trainer=trainer,

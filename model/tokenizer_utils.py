@@ -54,7 +54,7 @@ def train_tokenizer(
     tokenizer.pre_tokenizer = WhitespaceSplit()
 
     trainer = BpeTrainer(
-        vocab_size=32000,
+        vocab_size=3200,
         min_frequency=2,
         special_tokens=special_tokens_list,
     )

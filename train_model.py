@@ -34,7 +34,7 @@ def get_dataset(tokenizer):
     return mapped_ds
 
 
-def train_model(max_steps, save_steps, checkpoint_path=None):
+def train_model(max_steps, save_steps, checkpoint_path=None, generate_every=100):
     config = BeruConfig(n_layers=2)
     model = BeruModel(config)
     print(model)
@@ -99,7 +99,7 @@ def train_model(max_steps, save_steps, checkpoint_path=None):
         model=model,
         args=training_args,
         train_dataset=ds,
-        callbacks=[GenerationCallback(tokenizer)],
+        callbacks=[GenerationCallback(tokenizer, generate_every=generate_every)],
     )
 
     trainer.train(resume_from_checkpoint=checkpoint_path)
@@ -122,9 +122,15 @@ def main():
         default=None,
         help="Path to checkpoint to resume training from",
     )
+    parser.add_argument(
+        "--generate_every",
+        type=int,
+        default=100,
+        help="Generate sample text every N steps",
+    )
     args = parser.parse_args()
 
-    train_model(args.max_steps, args.save_steps, args.checkpoint_path)
+    train_model(args.max_steps, args.save_steps, args.checkpoint_path, args.generate_every)
 
 
 if __name__ == "__main__":

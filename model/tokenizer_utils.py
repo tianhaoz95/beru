@@ -30,7 +30,7 @@ def train_tokenizer(batches_to_train=10000, batch_size=20):
     ds = load_dataset(
         "HuggingFaceFW/fineweb", "CC-MAIN-2013-20", split="train", streaming=True
     )
-    tokenizer = Tokenizer(BPE(unk_token="[UNK]"))
+    tokenizer = Tokenizer(BPE(unk_token="<|unknown|>",))
     tokenizer.normalizer = normalizers.Sequence([NFD(), Lowercase(), StripAccents()])
     tokenizer.pre_tokenizer = ByteLevel(add_prefix_space=False)
     trainer = BpeTrainer(
@@ -43,6 +43,7 @@ def train_tokenizer(batches_to_train=10000, batch_size=20):
             "<|end_header_id|>",
             "<|reserved_special_token_4|>",
             "<|eot_id|>",
+            "<|unknown|>",
         ]
         + [f"<|reserved_special_token_{i}|>" for i in range(10)],
     )

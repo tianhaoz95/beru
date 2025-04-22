@@ -12,7 +12,9 @@ import utils
 from transformers import TrainerCallback, TrainingArguments, Trainer
 
 
-def train_model(max_steps, save_steps, checkpoint_path=None, generate_every=100, batch_size=100):
+def train_model(
+    max_steps, save_steps, checkpoint_path=None, generate_every=100, batch_size=100
+):
     config = BeruConfig(n_layers=2)
     model = BeruModel(config)
     print(model)
@@ -40,6 +42,7 @@ def train_model(max_steps, save_steps, checkpoint_path=None, generate_every=100,
         save_strategy="steps",
         save_steps=save_steps,
         save_safetensors=False,
+        report_to="none",
     )
 
     class GenerationCallback(TrainerCallback):
@@ -116,7 +119,7 @@ def main():
         args.save_steps,
         args.checkpoint_path,
         args.generate_every,
-        args.batch_size
+        args.batch_size,
     )
 
 

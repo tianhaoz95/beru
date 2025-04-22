@@ -59,6 +59,8 @@ def train_model(
                     device = torch.device(utils.get_device())
                     input_ids = torch.tensor([encoded]).to(device)
                     generated_sequences = []
+                    print(f"\nStep {state.global_step} generation:")
+                    print(f"Prompt: {self.prompt}")
                     for output_ids in model.generate(
                         input_ids,
                         eos_token_id=tokenizer.eos_token_id,
@@ -67,11 +69,10 @@ def train_model(
                         top_p=0.9,
                         use_cache=True,
                     ):
-                        generated_sequences += output_ids.tolist()[0]
-                    generated_text = tokenizer.decode(generated_sequences)
-                    print(f"\nStep {state.global_step} generation:")
-                    print(f"Prompt: {self.prompt}")
-                    print(f"Generated: {generated_text}\n")
+                        generated_sequences = output_ids.tolist()
+                        current_text = tokenizer.decode(generated_sequences[0])
+                        print(f"\rGenerated: {current_text}", end="", flush=True)
+                    print("\n")
                 model.train()
 
     trainer = Trainer(

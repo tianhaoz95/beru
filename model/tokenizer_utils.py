@@ -4,6 +4,7 @@ import sys
 from typing import List
 
 from datasets import load_dataset
+from model.config import BeruConfig
 from tokenizers import Tokenizer, normalizers
 from tokenizers.models import BPE
 from tokenizers.normalizers import NFD, Lowercase, StripAccents
@@ -28,7 +29,10 @@ def batch_iterator(dataset, batch_size=100, total_batches=500):
 
 
 def train_tokenizer(
-    batches_to_train=10000, batch_size=20, output_dir="my_bpe_tokenizer_files"
+    batches_to_train=10000,
+    batch_size=20,
+    output_dir="my_bpe_tokenizer_files",
+    params: BeruConfig = BeruConfig(),
 ):
     ds = load_dataset(
         "HuggingFaceFW/fineweb", "CC-MAIN-2013-20", split="train", streaming=True
@@ -54,7 +58,7 @@ def train_tokenizer(
     tokenizer.pre_tokenizer = WhitespaceSplit()
 
     trainer = BpeTrainer(
-        vocab_size=3200,
+        vocab_size=params.vocab_size,
         min_frequency=2,
         special_tokens=special_tokens_list,
     )

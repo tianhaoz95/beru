@@ -15,7 +15,7 @@ from transformers import TrainerCallback, TrainingArguments, Trainer
 def train_model(
     max_steps, save_steps, checkpoint_path=None, generate_every=100, batch_size=100
 ):
-    config = BeruConfig(n_layers=2)
+    config = BeruConfig()
     model = BeruModel(config)
     print(model)
 

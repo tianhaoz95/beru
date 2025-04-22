@@ -61,6 +61,7 @@ def train_model(
                     generated_sequences = []
                     for output_ids in model.generate(
                         input_ids,
+                        eos_token_id=tokenizer.eos_token_id,
                         max_new_tokens=20,
                         temperature=0.7,
                         top_p=0.9,

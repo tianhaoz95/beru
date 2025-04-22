@@ -1,37 +1,15 @@
 from model.model import BeruModel
 from model.model_config import BeruConfig
-from tokenizers import Tokenizer
-from datasets import load_dataset
+from transformers import AutoTokenizer
 from torch import optim, nn
 import math
 from transformers import Trainer, TrainingArguments
 import torch
 import argparse
+from utils import chunk_and_tokenize_dataset
 import utils
 
 from transformers import TrainerCallback, TrainingArguments, Trainer
-
-
-def get_dataset(tokenizer):
-    def tokenize_and_chunk(example):
-        tokens = tokenizer.encode(example["text"]).ids
-        chunk = tokens[: min(513, len(tokens))]
-        if len(chunk) < 513:
-            chunk += [tokenizer.token_to_id("[PAD]")] * (513 - len(chunk))
-        example["input_ids"] = chunk[:-1]
-        example["labels"] = chunk[1:]
-        return example
-
-    ds = load_dataset(
-        "HuggingFaceFW/fineweb", "CC-MAIN-2013-20", split="train", streaming=True
-    )
-    print("Original dataset:", ds)
-    mapped_ds = ds.map(
-        tokenize_and_chunk,
-        remove_columns=ds.column_names,
-    )
-    print("Mapped dataset:", mapped_ds)
-    return mapped_ds
 
 
 def train_model(max_steps, save_steps, checkpoint_path=None, generate_every=100):
@@ -39,19 +17,16 @@ def train_model(max_steps, save_steps, checkpoint_path=None, generate_every=100)
     model = BeruModel(config)
     print(model)
 
-    tokenizer = Tokenizer.from_file("bpe-small-vocab-for-beru.json")
-    ds = get_dataset(tokenizer)
+    tokenizer = AutoTokenizer.from_pretrained("my_bpe_tokenizer_files")
+    ds = chunk_and_tokenize_dataset(tokenizer)
 
     text_to_encode = "This is a test sentence from the dataset."
     encoded = tokenizer.encode(text_to_encode)
     print(f"\n--- Testing Tokenizer ---")
     print(f"Original: {text_to_encode}")
-    print(f"Encoded IDs: {encoded.ids}")
-    print(f"Encoded Tokens: {encoded.tokens}")
-    decoded = tokenizer.decode(encoded.ids)
+    print(f"Encoded IDs: {encoded}")
+    decoded = tokenizer.decode(encoded)
     print(f"Decoded: {decoded}")
-
-    ds = get_dataset(tokenizer)
 
     training_args = TrainingArguments(
         output_dir="./checkpoints",
@@ -79,7 +54,7 @@ def train_model(max_steps, save_steps, checkpoint_path=None, generate_every=100)
                 with torch.no_grad():
                     encoded = tokenizer.encode(self.prompt)
                     device = torch.device(utils.get_device())
-                    input_ids = torch.tensor([encoded.ids]).to(device)
+                    input_ids = torch.tensor([encoded]).to(device)
                     generated_sequences = []
                     for output_ids in model.generate(
                         input_ids,

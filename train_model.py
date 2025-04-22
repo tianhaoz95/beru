@@ -49,7 +49,7 @@ def train_model(
         def __init__(self, tokenizer, generate_every=100):
             self.tokenizer = tokenizer
             self.generate_every = generate_every
-            self.prompt = "The quick brown fox"
+            self.prompt = "This is a story about basketball "
 
         def on_step_end(self, args, state, control, model, **kwargs):
             if state.global_step % self.generate_every == 0:

@@ -4,7 +4,7 @@ import sys
 from typing import List
 
 from datasets import load_dataset
-from .config import BeruConfig
+from model_config import BeruConfig
 from tokenizers import Tokenizer, normalizers
 from tokenizers.models import BPE
 from tokenizers.normalizers import NFD, Lowercase, StripAccents

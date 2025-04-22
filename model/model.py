@@ -219,7 +219,7 @@ class BeruModel(PreTrainedModel):
         return self.OUT
 
     @torch.inference_mode()
-    def generate(self, input_ids, eos_token_id=2, max_new_tokens=1024, temperature=0.75, top_p=0.90,
+    def generate(self, input_ids, eos_token_id=1, max_new_tokens=1024, temperature=0.75, top_p=0.90,
                  stream=False, rp=1., use_cache=True, pad_token_id=0, num_return_sequences=1, **args):
         start, first_seq, past_kvs = input_ids.shape[1], True, None
         while input_ids.shape[1] < max_new_tokens - 1:

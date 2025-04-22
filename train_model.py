@@ -30,7 +30,7 @@ def train_model(max_steps, save_steps, checkpoint_path=None, generate_every=100)
 
     training_args = TrainingArguments(
         output_dir="./checkpoints",
-        per_device_train_batch_size=8,
+        per_device_train_batch_size=100,
         gradient_accumulation_steps=4,
         max_steps=max_steps,
         learning_rate=5e-4,

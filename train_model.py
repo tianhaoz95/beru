@@ -13,13 +13,18 @@ from transformers import TrainerCallback, TrainingArguments, Trainer
 
 
 def train_model(
-    max_steps, save_steps, checkpoint_path=None, generate_every=100, batch_size=100
+    max_steps,
+    save_steps,
+    checkpoint_path=None,
+    generate_every=100,
+    batch_size=100,
+    tokenizer_path="my_bpe_tokenizer_files",
 ):
     config = BeruConfig()
     model = BeruModel(config)
     print(model)
 
-    tokenizer = AutoTokenizer.from_pretrained("my_bpe_tokenizer_files")
+    tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
     ds = chunk_and_tokenize_dataset(tokenizer)
 
     text_to_encode = "This is a test sentence from the dataset."
@@ -114,6 +119,12 @@ def main():
         default=8,
         help="Per device training batch size",
     )
+    parser.add_argument(
+        "--tokenizer_path",
+        type=str,
+        default="my_bpe_tokenizer_files",
+        help="Path to the tokenizer files",
+    )
     args = parser.parse_args()
 
     train_model(
@@ -122,6 +133,7 @@ def main():
         args.checkpoint_path,
         args.generate_every,
         args.batch_size,
+        args.tokenizer_path,
     )
 
 

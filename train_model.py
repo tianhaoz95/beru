@@ -78,7 +78,7 @@ def train_model(
                         generated_sequences = output_ids.tolist()
                         current_text = tokenizer.decode(generated_sequences[0])
                         print(
-                            f"\rGenerated: {self.prompt}{current_text}",
+                            f"\rGenerated: {self.prompt} {current_text}",
                             end="",
                             flush=True,
                         )

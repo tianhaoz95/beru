@@ -19,8 +19,9 @@ def train_model(
     generate_every=100,
     batch_size=100,
     tokenizer_path="my_bpe_tokenizer_files",
+    vocab_size=32000,
 ):
-    config = BeruConfig()
+    config = BeruConfig(vocab_size=vocab_size)
     model = BeruModel(config)
     print(model)
 
@@ -129,6 +130,12 @@ def main():
         default="my_bpe_tokenizer_files",
         help="Path to the tokenizer files",
     )
+    parser.add_argument(
+        "--vocab_size",
+        type=int,
+        default=32000,
+        help="Size of the vocabulary (default: 32000)",
+    )
     args = parser.parse_args()
 
     train_model(
@@ -138,6 +145,7 @@ def main():
         args.generate_every,
         args.batch_size,
         args.tokenizer_path,
+        args.vocab_size,
     )
 
 

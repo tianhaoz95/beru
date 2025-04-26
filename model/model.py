@@ -20,18 +20,6 @@ class RMSNorm(torch.nn.Module):
         return self.weight * self._norm(x.float()).type_as(x)
 
 
-def repeat_kv(x: torch.Tensor, n_rep: int) -> torch.Tensor:
-    """torch.repeat_interleave(x, dim=2, repeats=n_rep)"""
-    bs, slen, n_kv_heads, head_dim = x.shape
-    if n_rep == 1:
-        return x
-    return (
-        x[:, :, :, None, :]
-        .expand(bs, slen, n_kv_heads, n_rep, head_dim)
-        .reshape(bs, slen, n_kv_heads * n_rep, head_dim)
-    )
-
-
 def precompute_pos_cis(dim: int, end: int = int(32 * 1024), theta: float = 1e6):
     freqs = 1.0 / (theta ** (torch.arange(0, dim, 2)[: (dim // 2)].float() / dim))
     t = torch.arange(end, device=freqs.device)
@@ -40,7 +28,7 @@ def precompute_pos_cis(dim: int, end: int = int(32 * 1024), theta: float = 1e6):
     return pos_cis
 
 
-def apply_rotary_emb(xq, xk, pos_cis):
+def apply_rope(xq, xk, pos_cis):
     def unite_shape(pos_cis, x):
         ndim = x.ndim
         assert 0 <= 1 < ndim
@@ -54,6 +42,17 @@ def apply_rotary_emb(xq, xk, pos_cis):
     xq_out = torch.view_as_real(xq_ * pos_cis).flatten(3)
     xk_out = torch.view_as_real(xk_ * pos_cis).flatten(3)
     return xq_out.type_as(xq), xk_out.type_as(xk)
+
+
+def repeat_kv(x: torch.Tensor, n_rep: int) -> torch.Tensor:
+    bs, slen, n_kv_heads, head_dim = x.shape
+    if n_rep == 1:
+        return x
+    return (
+        x[:, :, :, None, :]
+        .expand(bs, slen, n_kv_heads, n_rep, head_dim)
+        .reshape(bs, slen, n_kv_heads * n_rep, head_dim)
+    )
 
 
 class Attention(nn.Module):
@@ -91,7 +90,7 @@ class Attention(nn.Module):
         xk = xk.view(bsz, seq_len, self.n_local_kv_heads, self.head_dim)
         xv = xv.view(bsz, seq_len, self.n_local_kv_heads, self.head_dim)
 
-        xq, xk = apply_rotary_emb(xq, xk, pos_cis)
+        xq, xk = apply_rope(xq, xk, pos_cis)
         if past_key_value is not None:
             xk = torch.cat([past_key_value[0], xk], dim=1)
             xv = torch.cat([past_key_value[1], xv], dim=1)
@@ -219,8 +218,20 @@ class BeruModel(PreTrainedModel):
         return self.OUT
 
     @torch.inference_mode()
-    def generate(self, input_ids, eos_token_id=1, max_new_tokens=1024, temperature=0.75, top_p=0.90,
-                 stream=False, rp=1., use_cache=True, pad_token_id=0, num_return_sequences=1, **args):
+    def generate(
+        self,
+        input_ids,
+        eos_token_id=1,
+        max_new_tokens=1024,
+        temperature=0.75,
+        top_p=0.90,
+        stream=False,
+        rp=1.0,
+        use_cache=True,
+        pad_token_id=0,
+        num_return_sequences=1,
+        **args
+    ):
         start, first_seq, past_kvs = input_ids.shape[1], True, None
         while input_ids.shape[1] < max_new_tokens - 1:
             if first_seq or not use_cache:

@@ -175,9 +175,10 @@ cython_debug/
 
 # Artifacts
 checkpoints/
+checkpoint-*/
 my_bpe_tokenizer_files/
 converted_tokenizer/
-my_bpe_tokenizer_files.zip
+*.zip
 
 # System files
 .DS_Store

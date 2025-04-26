@@ -71,7 +71,7 @@ class Attention(nn.Module):
         self.wv = nn.Linear(config.dim, self.n_kv_heads * self.head_dim, bias=False)
         self.wo = nn.Linear(config.n_heads * self.head_dim, config.dim, bias=False)
         self.attn_dropout = nn.Dropout(config.dropout)
-        self.resid_dropout = nn.Dropout(config.dropout)
+        self.res_dropout = nn.Dropout(config.dropout)
         self.dropout = config.dropout
         mask = torch.full((1, 1, config.max_seq_len, config.max_seq_len), float("-inf"))
         mask = torch.triu(mask, diagonal=1)
@@ -108,7 +108,7 @@ class Attention(nn.Module):
         output = scores @ xv
 
         output = output.transpose(1, 2).reshape(bsz, seq_len, -1)
-        output = self.resid_dropout(self.wo(output))
+        output = self.res_dropout(self.wo(output))
         return output, past_kv
 
 

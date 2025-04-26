@@ -21,24 +21,33 @@ class RMSNorm(torch.nn.Module):
 
 
 def precompute_pos_cis(dim: int, end: int = int(32 * 1024), theta: float = 1e6):
+    # Calculates theta_i = 1.0 / (base^(2i / dim))
     freqs = 1.0 / (theta ** (torch.arange(0, dim, 2)[: (dim // 2)].float() / dim))
+    # Build position indices: [0, 1, ..., max_seq_len - 1]
     t = torch.arange(end, device=freqs.device)
-    freqs = torch.outer(t, freqs).float()
+    # Calculate m * theta_i values: Outer product of positions and inv_freq
+    freqs = torch.outer(t, freqs).float()  # Shape: (max_seq_len, dim / 2)
+    # Convert angles to unit complex numbers
     pos_cis = torch.polar(torch.ones_like(freqs), freqs)
     return pos_cis
 
 
 def apply_rope(xq, xk, pos_cis):
-    def unite_shape(pos_cis, x):
+    def broadcast_pos_cis(pos_cis, x):
         ndim = x.ndim
         assert 0 <= 1 < ndim
         assert pos_cis.shape == (x.shape[1], x.shape[-1])
         shape = [d if i == 1 or i == ndim - 1 else 1 for i, d in enumerate(x.shape)]
         return pos_cis.view(*shape)
-
+    # Shape converted from (batch_size, seq_len, n_heads, head_dim)
+    # to (batch_size, seq_len, n_heads, head_dim/2, 2).
     xq_ = torch.view_as_complex(xq.float().reshape(*xq.shape[:-1], -1, 2))
     xk_ = torch.view_as_complex(xk.float().reshape(*xk.shape[:-1], -1, 2))
-    pos_cis = unite_shape(pos_cis, xq_)
+    # Expand pos_cis from (max_seq_len, dim / 2) to (1, seq_len, 1, head_dim/2, 1).
+    # This is so that we can broadcast to heads and batches.
+    pos_cis = broadcast_pos_cis(pos_cis, xq_)
+    # Shape converted from (batch_size, seq_len, n_heads, head_dim/2, 2)
+    # to (batch_size, seq_len, n_heads, head_dim).
     xq_out = torch.view_as_real(xq_ * pos_cis).flatten(3)
     xk_out = torch.view_as_real(xk_ * pos_cis).flatten(3)
     return xq_out.type_as(xq), xk_out.type_as(xk)

@@ -112,7 +112,7 @@ class Attention(nn.Module):
         return output, past_kv
 
 
-class FeedForward(nn.Module):
+class FFN(nn.Module):
     def __init__(self, config: BeruConfig):
         super().__init__()
         if config.hidden_dim is None:
@@ -141,7 +141,7 @@ class BeruBlock(nn.Module):
         self.layer_id = layer_id
         self.attention_norm = RMSNorm(config.dim, eps=config.norm_eps)
         self.ffn_norm = RMSNorm(config.dim, eps=config.norm_eps)
-        self.feed_forward = FeedForward(config)
+        self.ffn = FFN(config)
 
     def forward(self, x, pos_cis, past_key_value=None, use_cache=False):
         h_attn, past_kv = self.attention(
@@ -151,7 +151,7 @@ class BeruBlock(nn.Module):
             use_cache=use_cache,
         )
         h = x + h_attn
-        out = h + self.feed_forward(self.ffn_norm(h))
+        out = h + self.ffn(self.ffn_norm(h))
         return out, past_kv
 
 

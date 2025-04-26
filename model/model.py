@@ -55,19 +55,6 @@ def apply_rope(xq, xk, pos_cis):
     return xq_out.type_as(xq), xk_out.type_as(xk)
 
 
-def repeat_kv(x: torch.Tensor, n_rep: int) -> torch.Tensor:
-    bs, slen, n_kv_heads, head_dim = x.shape
-    if n_rep == 1:
-        return x
-    return (
-        x[:, :, :, None, :]  # Expand the shape to be (seq_len, n_kv_heads, 1, head_dim)
-        .expand(
-            bs, slen, n_kv_heads, n_rep, head_dim
-        )  # Replicate on the repeat axis to shape (seq_len, n_kv_heads, n_rep, head_dim)
-        .reshape(bs, slen, n_kv_heads * n_rep, head_dim)
-    )
-
-
 class Attention(nn.Module):
     def __init__(self, config: BeruConfig):
         super().__init__()
@@ -108,6 +95,20 @@ class Attention(nn.Module):
             xk = torch.cat([past_key_value[0], xk], dim=1)
             xv = torch.cat([past_key_value[1], xv], dim=1)
         past_kv = (xk, xv) if use_cache else None
+
+        def repeat_kv(x: torch.Tensor, n_rep: int) -> torch.Tensor:
+            bs, slen, n_kv_heads, head_dim = x.shape
+            if n_rep == 1:
+                return x
+            return (
+                x[
+                    :, :, :, None, :
+                ]  # Expand the shape to be (seq_len, n_kv_heads, 1, head_dim)
+                .expand(
+                    bs, slen, n_kv_heads, n_rep, head_dim
+                )  # Replicate on the repeat axis to shape (seq_len, n_kv_heads, n_rep, head_dim)
+                .reshape(bs, slen, n_kv_heads * n_rep, head_dim)
+            )
 
         xq, xk, xv = (
             xq.transpose(1, 2),

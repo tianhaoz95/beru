@@ -35,8 +35,9 @@ def precompute_pos_cis(dim: int, max_len: int = int(32 * 1024), theta: float = 1
 def apply_rope(xq, xk, pos_cis):
     def broadcast_pos_cis(pos_cis, x):
         ndim = x.ndim
-        assert 0 <= 1 < ndim
+        # Check seq len and head dim should match.
         assert pos_cis.shape == (x.shape[1], x.shape[-1])
+        # Retain the seq len and head dim and expand the rest to match x shape.
         shape = [d if i == 1 or i == ndim - 1 else 1 for i, d in enumerate(x.shape)]
         return pos_cis.view(*shape)
 
